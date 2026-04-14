@@ -57,15 +57,14 @@ Vyrnix is built for users who want to understand and control their system.
 
 ## 📦 Project Structure
 
-vyrnix/
-├── build/          # Build system (kernel, iso, automation)
-├── kernel/         # Kernel config, patches, tuning
-├── rootfs/         # Base system files (skel, configs)
-├── packages/       # Custom PKGBUILDs / packages
-├── config/         # System-wide configs (sway, sysctl, etc.)
-├── branding/       # Logo, themes, plymouth, etc.
-├── scripts/        # Helper scripts
-└── docs/           # Documentation
+- **build/** – build system (kernel, ISO, automation)  
+- **kernel/** – kernel config and patches  
+- **rootfs/** – base system files  
+- **packages/** – custom packages  
+- **config/** – system configuration  
+- **branding/** – themes and visuals  
+- **scripts/** – helper scripts  
+- **docs/** – documentation 
 
 ---
 
