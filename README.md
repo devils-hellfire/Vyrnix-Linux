@@ -1,6 +1,6 @@
 # Vyrnix Linux
 
-**Vyrnix Linux** ist eine minimalistische, modulare Linux-Distribution, inspiriert von der Klarheit und Struktur von FreeBSD und der Flexibilität von Arch Linux.
+**Vyrnix Linux** ist eine minimalistische, modulare Linux-Distribution, inspiriert von der Klarheit und Struktur von FreeBSD und der Flexibilität von Arch Linux. Made in Germany.
 
 Das Ziel:  
 👉 Ein schlankes, performantes System, das sich **automatisch an die Hardware anpasst**  
@@ -32,7 +32,7 @@ Vyrnix folgt einer Kombination aus:
 Vyrnix ist **kein klassisches monolithisches System**, sondern:
 
 - 🔹 **Modular aufgebaut** (ähnlich FreeBSD Ports / Modules)
-- 🔹 Basierend auf Arch Linux als stabile Grundlage :contentReference  
+- 🔹 Basierend auf Arch Linux als stabile Grundlage  
 - 🔹 Eigene Paketstruktur (`vyrnix-*`) für Hardware- und Systemmodule  
 - 🔹 Eigene Repository-Struktur für Kernel + Module  
 
@@ -59,8 +59,6 @@ Zusätzlich integriert:
 - 1000Hz Scheduling  
 - Hard Kernel Preemption  
 - TCP BBR2  
-
-:contentReference[oaicite:2]{index=2}
 
 ---
 
