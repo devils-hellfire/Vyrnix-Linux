@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+pkgname=vyrnix-profile-manager
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Profile manager for Vyrnix Linux system modes"
+arch=('x86_64')
+url="https://github.com/devils-hellfire/Vyrnix-Linux"
+license=('custom:Vyrnix')
+depends=(
+  'bash'
+  'coreutils'
+  'glibc'
+  'grep'
+  'sed'
+  'systemd'
+)
+optdepends=(
+  'procps-ng: required for sysctl application'
+)
+install="${pkgname}.install"
+source=(
+  'vyrnix-profile'
+  'balance.conf'
+  'gaming.conf'
+  'office.conf'
+  'realtime.conf'
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -Dm755 "${srcdir}/vyrnix-profile" \
+    "${pkgdir}/usr/bin/vyrnix-profile"
+
+  install -Dm644 "${srcdir}/balance.conf" \
+    "${pkgdir}/etc/vyrnix/profiles/balance.conf"
+
+  install -Dm644 "${srcdir}/gaming.conf" \
+    "${pkgdir}/etc/vyrnix/profiles/gaming.conf"
+
+  install -Dm644 "${srcdir}/office.conf" \
+    "${pkgdir}/etc/vyrnix/profiles/office.conf"
+
+  install -Dm644 "${srcdir}/realtime.conf" \
+    "${pkgdir}/etc/vyrnix/profiles/realtime.conf"
+
+  install -dm755 "${pkgdir}/var/lib/vyrnix"
+}

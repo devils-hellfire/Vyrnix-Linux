@@ -1,0 +1,13 @@
+[Unit]
+Description=Vyrnix first boot initialization
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=!/var/lib/vyrnix/firstboot.done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/vyrnix-firstboot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

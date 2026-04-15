@@ -1,0 +1,275 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+PROFILE_DIR="/etc/vyrnix/profiles"
+STATE_DIR="/var/lib/vyrnix"
+ACTIVE_PROFILE_FILE="${STATE_DIR}/active-profile"
+
+usage() {
+  cat <<'EOF'
+vyrnix-profile - manage Vyrnix system profiles
+
+Usage:
+  vyrnix-profile list
+  vyrnix-profile current
+  vyrnix-profile status
+  vyrnix-profile apply <profile>
+  vyrnix-profile set <profile>
+  vyrnix-profile help
+
+Available profiles:
+  balance
+  gaming
+  office
+  realtime
+EOF
+}
+
+ensure_state_dir() {
+  mkdir -p "${STATE_DIR}"
+}
+
+profile_file() {
+  local profile="$1"
+  printf '%s/%s.conf\n' "${PROFILE_DIR}" "${profile}"
+}
+
+require_profile_exists() {
+  local profile="$1"
+  local file
+  file="$(profile_file "${profile}")"
+
+  if [[ ! -f "${file}" ]]; then
+    echo "Profile not found: ${profile}" >&2
+    exit 1
+  fi
+}
+
+trim() {
+  local value="$1"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "${value}"
+}
+
+sysctl_path_from_key() {
+  local key="$1"
+  printf '/proc/sys/%s\n' "${key//./\/}"
+}
+
+sysctl_key_exists() {
+  local key="$1"
+  local path
+  path="$(sysctl_path_from_key "${key}")"
+  [[ -e "${path}" ]]
+}
+
+list_profiles() {
+  local file
+  for file in "${PROFILE_DIR}"/*.conf; do
+    [[ -e "${file}" ]] || continue
+    basename "${file}" .conf
+  done | sort
+}
+
+current_profile() {
+  if [[ -f "${ACTIVE_PROFILE_FILE}" ]]; then
+    cat "${ACTIVE_PROFILE_FILE}"
+  else
+    echo "balance"
+  fi
+}
+
+parse_profile_line() {
+  local raw_line="$1"
+  local key_out_var="$2"
+  local value_out_var="$3"
+
+  local parsed_key=""
+  local parsed_value=""
+
+  raw_line="$(trim "${raw_line}")"
+
+  if [[ -z "${raw_line}" || "${raw_line}" == \#* ]]; then
+    printf -v "${key_out_var}" '%s' ""
+    printf -v "${value_out_var}" '%s' ""
+    return 1
+  fi
+
+  if [[ "${raw_line}" != *"="* ]]; then
+    printf -v "${key_out_var}" '%s' ""
+    printf -v "${value_out_var}" '%s' ""
+    return 2
+  fi
+
+  parsed_key="${raw_line%%=*}"
+  parsed_value="${raw_line#*=}"
+
+  parsed_key="$(trim "${parsed_key}")"
+  parsed_value="$(trim "${parsed_value}")"
+
+  if [[ -z "${parsed_key}" || -z "${parsed_value}" ]]; then
+    printf -v "${key_out_var}" '%s' ""
+    printf -v "${value_out_var}" '%s' ""
+    return 3
+  fi
+
+  printf -v "${key_out_var}" '%s' "${parsed_key}"
+  printf -v "${value_out_var}" '%s' "${parsed_value}"
+  return 0
+}
+
+show_status() {
+  local profile
+  local file
+  local raw_line
+  local key
+  local value
+  local available=0
+  local missing=0
+  local invalid=0
+
+  profile="$(current_profile)"
+  require_profile_exists "${profile}"
+  file="$(profile_file "${profile}")"
+
+  echo "Vyrnix profile status"
+  echo "---------------------"
+  echo "Active profile : ${profile}"
+  echo "Profile file   : ${file}"
+  echo
+
+  while IFS= read -r raw_line || [[ -n "${raw_line}" ]]; do
+    if parse_profile_line "${raw_line}" key value; then
+      if sysctl_key_exists "${key}"; then
+        echo "[ok]    ${key}=${value}"
+        available=$((available + 1))
+      else
+        echo "[skip]  ${key}=${value}  (not available in running kernel)"
+        missing=$((missing + 1))
+      fi
+    else
+      case $? in
+        1)
+          # leer oder Kommentar
+          ;;
+        2|3)
+          echo "[bad]   ${raw_line}"
+          invalid=$((invalid + 1))
+          ;;
+      esac
+    fi
+  done < "${file}"
+
+  echo
+  echo "Summary:"
+  echo "  available : ${available}"
+  echo "  missing   : ${missing}"
+  echo "  invalid   : ${invalid}"
+}
+
+apply_profile() {
+  local profile="$1"
+  local file
+  local raw_line
+  local key
+  local value
+  local applied=0
+  local skipped=0
+  local failed=0
+
+  require_profile_exists "${profile}"
+  file="$(profile_file "${profile}")"
+
+  if ! command -v sysctl >/dev/null 2>&1; then
+    echo "sysctl is not available on this system." >&2
+    exit 1
+  fi
+
+  echo "Applying profile: ${profile}"
+  echo
+
+  while IFS= read -r raw_line || [[ -n "${raw_line}" ]]; do
+    if parse_profile_line "${raw_line}" key value; then
+      if ! sysctl_key_exists "${key}"; then
+        echo "[skip] ${key} not available in running kernel"
+        skipped=$((skipped + 1))
+        continue
+      fi
+
+      if sysctl -w "${key}=${value}" >/dev/null 2>&1; then
+        echo "[ok] ${key}=${value}"
+        applied=$((applied + 1))
+      else
+        echo "[fail] could not apply ${key}=${value}"
+        failed=$((failed + 1))
+      fi
+    else
+      case $? in
+        1)
+          # leer oder Kommentar
+          ;;
+        2|3)
+          echo "[skip] invalid line: ${raw_line}"
+          skipped=$((skipped + 1))
+          ;;
+      esac
+    fi
+  done < "${file}"
+
+  echo
+  echo "Profile result:"
+  echo "  applied : ${applied}"
+  echo "  skipped : ${skipped}"
+  echo "  failed  : ${failed}"
+
+  if [[ ${failed} -ne 0 ]]; then
+    return 1
+  fi
+}
+
+set_profile() {
+  local profile="$1"
+
+  require_profile_exists "${profile}"
+  ensure_state_dir
+  apply_profile "${profile}"
+  printf '%s\n' "${profile}" > "${ACTIVE_PROFILE_FILE}"
+  echo "Active profile set to: ${profile}"
+}
+
+main() {
+  local cmd="${1:-help}"
+
+  case "${cmd}" in
+    help|-h|--help)
+      usage
+      ;;
+    list)
+      list_profiles
+      ;;
+    current)
+      current_profile
+      ;;
+    status)
+      show_status
+      ;;
+    apply)
+      [[ $# -ge 2 ]] || { echo "Missing profile name." >&2; exit 1; }
+      apply_profile "$2"
+      ;;
+    set)
+      [[ $# -ge 2 ]] || { echo "Missing profile name." >&2; exit 1; }
+      set_profile "$2"
+      ;;
+    *)
+      echo "Unknown command: ${cmd}" >&2
+      echo
+      usage
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

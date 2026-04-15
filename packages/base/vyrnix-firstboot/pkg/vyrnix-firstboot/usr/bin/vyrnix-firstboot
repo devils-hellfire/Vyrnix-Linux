@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+CONFIG_FILE="/etc/vyrnix/firstboot.conf"
+STATE_DIR="/var/lib/vyrnix"
+DONE_FILE="${STATE_DIR}/firstboot.done"
+
+DEFAULT_PROFILE="balance"
+INSTALL_DETECTED_MODULES="true"
+LOG_FILE="/var/log/vyrnix/firstboot.log"
+
+load_config() {
+  if [[ -r "${CONFIG_FILE}" ]]; then
+    # shellcheck disable=SC1090
+    source "${CONFIG_FILE}"
+  fi
+}
+
+ensure_dirs() {
+  mkdir -p "${STATE_DIR}"
+  mkdir -p "$(dirname "${LOG_FILE}")"
+}
+
+log() {
+  local msg="$1"
+  echo "${msg}"
+  echo "${msg}" >> "${LOG_FILE}"
+}
+
+extract_modules_from_scan() {
+  local line
+  local in_section=0
+
+  vyrnix-hwdetect scan | while IFS= read -r line; do
+    if [[ "${line}" == "Detected hardware modules:" ]]; then
+      in_section=1
+      continue
+    fi
+
+    if [[ ${in_section} -eq 1 ]]; then
+      line="${line#"${line%%[![:space:]]*}"}"
+      [[ -z "${line}" ]] && continue
+      [[ "${line}" == "none" ]] && continue
+      printf '%s\n' "${line}"
+    fi
+  done
+}
+
+install_modules() {
+  local modules=()
+  local module
+
+  while IFS= read -r module; do
+    [[ -n "${module}" ]] && modules+=("${module}")
+  done < <(extract_modules_from_scan)
+
+  if [[ ${#modules[@]} -eq 0 ]]; then
+    log "[info] No hardware modules detected for installation."
+    return 0
+  fi
+
+  log "[info] Detected modules:"
+  for module in "${modules[@]}"; do
+    log "  - ${module}"
+  done
+
+  if [[ "${INSTALL_DETECTED_MODULES}" != "true" ]]; then
+    log "[info] Module installation disabled by configuration."
+    return 0
+  fi
+
+  log "[info] Installing detected modules via pacman..."
+  pacman -S --noconfirm "${modules[@]}" >> "${LOG_FILE}" 2>&1 || {
+    log "[warn] Module installation failed."
+    return 1
+  }
+
+  log "[info] Module installation finished."
+}
+
+set_default_profile() {
+  log "[info] Setting default profile: ${DEFAULT_PROFILE}"
+  if vyrnix-profile set "${DEFAULT_PROFILE}" >> "${LOG_FILE}" 2>&1; then
+    log "[info] Default profile applied successfully."
+  else
+    log "[warn] Failed to apply default profile."
+    return 1
+  fi
+}
+
+mark_done() {
+  printf 'done\n' > "${DONE_FILE}"
+  log "[info] Firstboot marked as completed."
+}
+
+main() {
+  if [[ "${EUID}" -ne 0 ]]; then
+    echo "vyrnix-firstboot must be run as root." >&2
+    exit 1
+  fi
+
+  load_config
+  ensure_dirs
+
+  : > "${LOG_FILE}"
+
+  log "Vyrnix firstboot started"
+
+  if [[ -f "${DONE_FILE}" ]]; then
+    log "[info] Firstboot already completed. Nothing to do."
+    exit 0
+  fi
+
+  install_modules || true
+  set_default_profile || true
+  mark_done
+
+  log "Vyrnix firstboot finished"
+}
+
+main "$@"

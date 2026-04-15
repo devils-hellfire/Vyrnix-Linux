@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+pkgname=vyrnix-defaults
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Default system configuration for Vyrnix Linux"
+arch=('x86_64')
+license=('custom:Vyrnix')
+depends=('systemd')
+install="${pkgname}.install"
+
+source=(
+  'sysctl.conf'
+  'journald.conf'
+  'README.defaults'
+)
+
+sha256sums=('SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -Dm644 "${srcdir}/sysctl.conf" \
+    "${pkgdir}/etc/sysctl.d/99-vyrnix.conf"
+
+  install -Dm644 "${srcdir}/journald.conf" \
+    "${pkgdir}/etc/systemd/journald.conf.d/vyrnix.conf"
+
+  install -Dm644 "${srcdir}/README.defaults" \
+    "${pkgdir}/usr/share/vyrnix/defaults/README"
+}

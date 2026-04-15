@@ -1,0 +1,4 @@
+NAME="Vyrnix Linux"
+EDITION="core"
+BASE="arch"
+ARCH="x86_64"

@@ -1,0 +1,8 @@
+post_install() {
+  systemctl enable vyrnix-firstboot.service >/dev/null 2>&1 || true
+  echo "==> Vyrnix firstboot service installed and enabled."
+}
+
+post_upgrade() {
+  post_install
+}

@@ -1,0 +1,11 @@
+Vyrnix Defaults
+
+This package provides system-wide default configurations for Vyrnix Linux.
+
+Focus:
+- Low latency
+- High responsiveness
+- Minimal overhead
+
+No hardware-specific tuning is applied here.
+Hardware handling is done via modules and hwdetect.

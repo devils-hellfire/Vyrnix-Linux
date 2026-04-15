@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+pkgname=vyrnix-hwdetect
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Hardware detection and module recommendation tool for Vyrnix Linux"
+arch=('x86_64')
+url="https://github.com/devils-hellfire/Vyrnix-Linux"
+license=('custom:Vyrnix')
+depends=(
+  'bash'
+  'coreutils'
+  'grep'
+  'gawk'
+  'sed'
+  'pciutils'
+  'usbutils'
+)
+install="${pkgname}.install"
+source=(
+  'vyrnix-hwdetect'
+  'amd-gpu.rules'
+  'intel-gpu.rules'
+  'intel-wifi.rules'
+  'realtek-wifi.rules'
+  'audio.rules'
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -Dm755 "${srcdir}/vyrnix-hwdetect" \
+    "${pkgdir}/usr/bin/vyrnix-hwdetect"
+
+  install -Dm644 "${srcdir}/amd-gpu.rules" \
+    "${pkgdir}/etc/vyrnix/hwdetect/rules.d/amd-gpu.rules"
+
+  install -Dm644 "${srcdir}/intel-gpu.rules" \
+    "${pkgdir}/etc/vyrnix/hwdetect/rules.d/intel-gpu.rules"
+
+  install -Dm644 "${srcdir}/intel-wifi.rules" \
+    "${pkgdir}/etc/vyrnix/hwdetect/rules.d/intel-wifi.rules"
+
+  install -Dm644 "${srcdir}/realtek-wifi.rules" \
+    "${pkgdir}/etc/vyrnix/hwdetect/rules.d/realtek-wifi.rules"
+
+  install -Dm644 "${srcdir}/audio.rules" \
+    "${pkgdir}/etc/vyrnix/hwdetect/rules.d/audio.rules"
+
+  install -dm755 "${pkgdir}/var/lib/vyrnix"
+}

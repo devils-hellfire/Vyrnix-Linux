@@ -1,0 +1,11 @@
+post_install() {
+  systemd-tmpfiles --create /usr/lib/tmpfiles.d/vyrnix-core.conf >/dev/null 2>&1 || true
+
+  echo "==> Vyrnix core installed."
+  echo "==> Minimal Vyrnix base userspace is now available."
+  echo "==> Next layers such as kernel, defaults, profiles, and firstboot are separate."
+}
+
+post_upgrade() {
+  post_install
+}

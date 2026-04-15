@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+pkgname=vyrnix-firstboot
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="First boot initialization service for Vyrnix Linux"
+arch=('x86_64')
+url="https://github.com/devils-hellfire/Vyrnix-Linux"
+license=('custom:Vyrnix')
+depends=(
+  'bash'
+  'coreutils'
+  'grep'
+  'pacman'
+  'systemd'
+  'vyrnix-hwdetect'
+  'vyrnix-profile-manager'
+)
+install="${pkgname}.install"
+source=(
+  'vyrnix-firstboot'
+  'vyrnix-firstboot.service'
+  'firstboot.conf'
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -Dm755 "${srcdir}/vyrnix-firstboot" \
+    "${pkgdir}/usr/bin/vyrnix-firstboot"
+
+  install -Dm644 "${srcdir}/vyrnix-firstboot.service" \
+    "${pkgdir}/usr/lib/systemd/system/vyrnix-firstboot.service"
+
+  install -Dm644 "${srcdir}/firstboot.conf" \
+    "${pkgdir}/etc/vyrnix/firstboot.conf"
+
+  install -dm755 "${pkgdir}/var/lib/vyrnix"
+  install -dm755 "${pkgdir}/var/log/vyrnix"
+}
+

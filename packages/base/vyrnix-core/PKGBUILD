@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+pkgname=vyrnix-core
+pkgver=0.1.1
+pkgrel=1
+pkgdesc="Core base package for the Vyrnix Linux distribution"
+arch=('x86_64')
+url="https://github.com/devils-hellfire/Vyrnix-Linux"
+license=('custom:Vyrnix')
+depends=(
+  'bash'
+  'coreutils'
+  'filesystem'
+  'findutils'
+  'gawk'
+  'glibc'
+  'grep'
+  'pacman'
+  'sed'
+  'systemd'
+  'util-linux'
+)
+optdepends=(
+  'gpm: mouse support on virtual consoles'
+)
+install="${pkgname}.install"
+source=(
+  "${pkgname}.install"
+  "vyrnix"
+  "core.conf"
+  "vyrnix-release"
+  "vyrnix-core.tmpfiles"
+  "LICENSE"
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -Dm755 "${srcdir}/vyrnix" \
+    "${pkgdir}/usr/bin/vyrnix"
+
+  install -Dm644 "${srcdir}/core.conf" \
+    "${pkgdir}/etc/vyrnix/core.conf"
+
+  install -Dm644 "${srcdir}/vyrnix-release" \
+    "${pkgdir}/usr/share/vyrnix/release"
+
+  install -Dm644 "${srcdir}/vyrnix-core.tmpfiles" \
+    "${pkgdir}/usr/lib/tmpfiles.d/vyrnix-core.conf"
+
+  install -Dm644 "${srcdir}/LICENSE" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+
+  install -dm755 "${pkgdir}/var/lib/vyrnix"
+}

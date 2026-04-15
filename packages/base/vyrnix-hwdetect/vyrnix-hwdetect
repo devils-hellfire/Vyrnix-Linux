@@ -1,0 +1,288 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+RULE_DIR="/etc/vyrnix/hwdetect/rules.d"
+STATE_DIR="/var/lib/vyrnix"
+
+usage() {
+  cat <<'EOF'
+vyrnix-hwdetect - detect hardware and suggest Vyrnix modules
+
+Usage:
+  vyrnix-hwdetect scan
+  vyrnix-hwdetect rules
+  vyrnix-hwdetect help
+  vyrnix-hwdetect report
+
+Commands:
+  scan    Scan PCI hardware and print matching Vyrnix modules
+  rules   List installed hwdetect rule files
+  help    Show this help
+  report  Show detailed hardware detection with rule matches
+
+Rule format:
+  CLASS|VENDOR|DEVICE|MODULE
+
+Examples:
+  0300|1002|*|vyrnix-module-gpu-amd
+  0280|8086|*|vyrnix-module-wifi-intel
+EOF
+}
+
+scan_cache_path() {
+  if [[ "${EUID}" -eq 0 ]]; then
+    printf '%s\n' "${STATE_DIR}/hwdetect-pci.txt"
+  else
+    printf '%s\n' "/tmp/vyrnix-hwdetect-${UID}.txt"
+  fi
+}
+
+ensure_state_dir() {
+  if [[ "${EUID}" -eq 0 ]]; then
+    mkdir -p "${STATE_DIR}"
+  fi
+}
+
+require_lspci() {
+  if ! command -v lspci >/dev/null 2>&1; then
+    echo "lspci is required but not available." >&2
+    exit 1
+  fi
+}
+
+list_rules() {
+  local file
+  for file in "${RULE_DIR}"/*.rules; do
+    [[ -e "${file}" ]] || continue
+    basename "${file}"
+  done | sort
+}
+
+scan_pci() {
+  local cache
+  cache="$(scan_cache_path)"
+
+  require_lspci
+  ensure_state_dir
+  lspci -nn > "${cache}"
+  printf '%s\n' "${cache}"
+}
+
+trim() {
+  local value="$1"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "${value}"
+}
+
+extract_class() {
+  local line="$1"
+  local class=""
+  if [[ "${line}" =~ \[([0-9a-fA-F]{4})\] ]]; then
+    class="${BASH_REMATCH[1]}"
+  fi
+  printf '%s' "${class,,}"
+}
+
+extract_vendor_device() {
+  local line="$1"
+  local vendor=""
+  local device=""
+
+  # letztes [vvvv:dddd] in der Zeile greifen
+  if [[ "${line}" =~ \[([0-9a-fA-F]{4}):([0-9a-fA-F]{4})\][^[]*$ ]]; then
+    vendor="${BASH_REMATCH[1]}"
+    device="${BASH_REMATCH[2]}"
+  fi
+
+  printf '%s|%s\n' "${vendor,,}" "${device,,}"
+}
+
+rule_matches() {
+  local class="$1"
+  local vendor="$2"
+  local device="$3"
+  local rule_class="$4"
+  local rule_vendor="$5"
+  local rule_device="$6"
+
+  [[ "${rule_class}" == "*" || "${rule_class,,}" == "${class,,}" ]] || return 1
+  [[ "${rule_vendor}" == "*" || "${rule_vendor,,}" == "${vendor,,}" ]] || return 1
+  [[ "${rule_device}" == "*" || "${rule_device,,}" == "${device,,}" ]] || return 1
+
+  return 0
+}
+
+match_rules() {
+  local cache="$1"
+  local line
+  local rule_file
+  local rule_line
+  local class
+  local vendor
+  local device
+  local vd
+  local rule_class
+  local rule_vendor
+  local rule_device
+  local module
+  local matched_any=0
+
+  declare -A found_modules=()
+
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    class="$(extract_class "${line}")"
+    vd="$(extract_vendor_device "${line}")"
+    vendor="${vd%%|*}"
+    device="${vd#*|}"
+
+    [[ -z "${class}" || -z "${vendor}" || -z "${device}" ]] && continue
+
+    for rule_file in "${RULE_DIR}"/*.rules; do
+      [[ -e "${rule_file}" ]] || continue
+
+      while IFS= read -r rule_line || [[ -n "${rule_line}" ]]; do
+        rule_line="$(trim "${rule_line}")"
+        [[ -z "${rule_line}" ]] && continue
+        [[ "${rule_line}" == \#* ]] && continue
+
+        IFS='|' read -r rule_class rule_vendor rule_device module <<< "${rule_line}"
+
+        rule_class="$(trim "${rule_class:-}")"
+        rule_vendor="$(trim "${rule_vendor:-}")"
+        rule_device="$(trim "${rule_device:-}")"
+        module="$(trim "${module:-}")"
+
+        [[ -z "${rule_class}" || -z "${rule_vendor}" || -z "${rule_device}" || -z "${module}" ]] && continue
+
+        if rule_matches "${class}" "${vendor}" "${device}" "${rule_class}" "${rule_vendor}" "${rule_device}"; then
+          found_modules["${module}"]=1
+          matched_any=1
+        fi
+      done < "${rule_file}"
+    done
+  done < "${cache}"
+
+  echo "Detected hardware modules:"
+  if [[ ${matched_any} -eq 0 ]]; then
+    echo "  none"
+    return 0
+  fi
+
+  for module in "${!found_modules[@]}"; do
+    echo "  ${module}"
+  done | sort
+}
+
+show_scan_header() {
+  echo "Vyrnix hardware scan"
+  echo "--------------------"
+}
+
+run_scan() {
+  local cache
+  show_scan_header
+  cache="$(scan_pci)"
+  echo "PCI scan saved to: ${cache}"
+  echo
+  match_rules "${cache}"
+}
+
+run_report() {
+  local cache
+  local line
+  local rule_file
+  local rule_line
+  local class
+  local vendor
+  local device
+  local vd
+  local rule_class
+  local rule_vendor
+  local rule_device
+  local module
+
+  declare -A shown=()
+
+  echo "Vyrnix hardware report"
+  echo "----------------------"
+
+  cache="$(scan_pci)"
+
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    class="$(extract_class "${line}")"
+    vd="$(extract_vendor_device "${line}")"
+    vendor="${vd%%|*}"
+    device="${vd#*|}"
+
+    [[ -z "${class}" || -z "${vendor}" || -z "${device}" ]] && continue
+
+    for rule_file in "${RULE_DIR}"/*.rules; do
+      [[ -e "${rule_file}" ]] || continue
+
+      while IFS= read -r rule_line || [[ -n "${rule_line}" ]]; do
+        rule_line="$(trim "${rule_line}")"
+        [[ -z "${rule_line}" ]] && continue
+        [[ "${rule_line}" == \#* ]] && continue
+
+        IFS='|' read -r rule_class rule_vendor rule_device module <<< "${rule_line}"
+
+        rule_class="$(trim "${rule_class:-}")"
+        rule_vendor="$(trim "${rule_vendor:-}")"
+        rule_device="$(trim "${rule_device:-}")"
+        module="$(trim "${module:-}")"
+
+        [[ -z "${module}" ]] && continue
+
+        if rule_matches "${class}" "${vendor}" "${device}" "${rule_class}" "${rule_vendor}" "${rule_device}"; then
+          key="${line}|${module}"
+
+          # doppelte Einträge vermeiden
+          if [[ -n "${shown["$key"]+x}" ]]; then
+            continue
+          fi
+          shown["$key"]=1
+
+          echo
+          echo "[MATCH]"
+          echo "  Device : ${line}"
+          echo "  Class  : ${class}"
+          echo "  Vendor : ${vendor}"
+          echo "  Device : ${device}"
+          echo "  Rule   : ${rule_class}|${rule_vendor}|${rule_device}"
+          echo "  Module : ${module}"
+        fi
+      done < "${rule_file}"
+    done
+  done < "${cache}"
+
+  echo
+}
+
+main() {
+  local cmd="${1:-help}"
+
+  case "${cmd}" in
+    help|-h|--help)
+      usage
+      ;;
+    scan)
+      run_scan
+      ;;
+    rules)
+      list_rules
+      ;;
+      report)
+      run_report
+      ;;
+    *)
+      echo "Unknown command: ${cmd}" >&2
+      echo
+      usage
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"
