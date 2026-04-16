@@ -1,178 +1,75 @@
 # Vyrnix Linux
 
-**Vyrnix Linux** ist eine minimalistische, modulare Linux-Distribution, inspiriert von der Klarheit und Struktur von FreeBSD und der Flexibilität von Arch Linux. Made in Germany.
+**Vyrnix Linux** is a minimal, modular Linux distribution inspired by the clarity of FreeBSD and the flexibility of Arch Linux.
 
-Das Ziel:  
-👉 Ein schlankes, performantes System, das sich **automatisch an die Hardware anpasst**  
-👉 Maximale Kontrolle ohne unnötigen Ballast  
-👉 Klare Struktur statt Chaos
+The goal:  
+👉 A lean system that **adapts automatically to your hardware**  
+👉 Maximum control without unnecessary complexity  
+👉 Clean structure instead of hidden behavior  
 
 ---
 
-## 🧭 Philosophie
+## 🧭 Philosophy
 
-Vyrnix folgt einer Kombination aus:
+Vyrnix combines two proven approaches:
 
-### 🧱 BSD-Philosophie
-- Klare Trennung von Systemkomponenten
-- Modularer Aufbau
-- Vorhersehbares Verhalten
-- Fokus auf Einfachheit und Kontrolle
+### 🧱 BSD Philosophy
+- Clear separation of components
+- Strong modular design
+- Predictable system behavior
+- Focus on simplicity and control
 
-### ⚙️ Arch Linux Prinzipien
+### ⚙️ Arch Linux Principles
 - KISS (Keep It Simple, Stupid)
-- Rolling Release
-- Nutzer hat die Kontrolle
-- Minimale Defaults, maximale Anpassbarkeit
+- Rolling release model
+- User-centric control
+- Minimal defaults, maximum flexibility
 
 ---
 
-## 🧩 Architektur
+## 🧩 Architecture
 
-Vyrnix ist **kein klassisches monolithisches System**, sondern:
+Vyrnix is not a traditional monolithic distribution:
 
-- 🔹 **Modular aufgebaut** (ähnlich FreeBSD Ports / Modules)
-- 🔹 Basierend auf Arch Linux als stabile Grundlage  
-- 🔹 Eigene Paketstruktur (`vyrnix-*`) für Hardware- und Systemmodule  
-- 🔹 Eigene Repository-Struktur für Kernel + Module  
-
----
-
-## 🚀 Konzept
-
-### 1. Minimaler Base-Kernel
-
-Ein bewusst reduzierter Kernel:
-
-- ❌ Kein Debugging
-- ❌ Kein Audit-System
-- ❌ Keine unnötigen Energiesparfeatures
-- ❌ Keine unnötigen Treiber
-- ✅ Nur Boot + Netzwerk + Basisfunktionalität
-
-➡️ Ziel: **Maximale Performance + minimale Komplexität**
-
-Zusätzlich integriert:
-
-- Kyber / BFQ I/O Scheduler  
-- PDS Scheduler  
-- 1000Hz Scheduling  
-- Hard Kernel Preemption  
-- TCP BBR2  
+- 🔹 **Modular system design** (inspired by FreeBSD) :contentReference[oaicite:0]{index=0}  
+- 🔹 Based on Arch Linux as a foundation :contentReference[oaicite:1]{index=1}  
+- 🔹 Custom package structure (`vyrnix-*`)  
+- 🔹 Dedicated repository for kernel and modules  
 
 ---
 
-### 2. Hardware-Erkennung nach Installation
+## 🚀 Core Concept
 
-Nach dem ersten Start:
+### 1. Minimal Base Kernel
 
-1. Hardware-Scan wird durchgeführt  
-2. Nur notwendige Module werden installiert  
-3. System bleibt minimal und effizient  
+A deliberately reduced kernel:
 
-Beispiel: "vyrnix-hwdetect scan"
+- ❌ No debugging features  
+- ❌ No audit system  
+- ❌ No unnecessary power-saving features  
+- ❌ No generic unused drivers  
+- ✅ Only essentials: boot, networking, core functionality  
 
+➡️ Goal: **Maximum performance with minimal complexity**
 
-➡️ Kein unnötiger Ballast. Kein generisches System.
+Included optimizations:
 
----
+- Kyber / BFQ I/O scheduler  
+- PDS process scheduler  
+- 1000Hz high-resolution scheduling  
+- Hard kernel preemption  
+- TCP BBR2 congestion control  
 
-### 3. Dynamische Systemprofile
-
-Während Laufzeit umschaltbar:
-
-- 🎮 Gaming
-- ⚡ Realtime
-- 💼 Office
-- 🔋 Balanced
-
-➡️ Umsetzung über Systemregeln (Runtime Switching)
+:contentReference[oaicite:2]{index=2}
 
 ---
 
-### 4. Vyrnix Module System
+### 2. Post-Install Hardware Detection
 
-Beispiele:
+After first boot:
 
-- `vyrnix-module-gpu-amd`
-- `vyrnix-module-wifi-intel`
-- `vyrnix-module-audio-pipewire`
+1. Hardware scan is executed  
+2. Only required modules are installed  
+3. System remains minimal and efficient  
 
-➡️ Nur das, was wirklich gebraucht wird
-
----
-
-## 🖱️ Usability Features
-
-- Moused-Unterstützung in **jeder Shell** (wie FreeBSD)
-- Funktionaler Maus-Support:
-  - im Installer
-  - im Live-System
-  - im laufenden System
-
----
-
-## 💿 Installer
-
-Minimalistisch, klar, funktional:
-
-### Auswahlmöglichkeiten:
-
-- Sprache
-- Tastatur
-- Netzwerk (Ethernet / WLAN)
-- Internetverbindung
-- Laufwerke
-- Partitionierung
-- Benutzer
-- Shell
-
-➡️ **Keine unnötigen Optionen**
-
-Zusätzlich:
-- Installer bootet immer direkt
-- Shell jederzeit verfügbar
-
----
-
-## 🎯 Ziel von Vyrnix
-
-Vyrnix ist gebaut für:
-
-- 🧠 Leute, die verstehen wollen, wie ihr System funktioniert
-- ⚡ Performance-Enthusiasten
-- 🛠️ Minimalisten
-- 🎮 Gamer / Realtime-User
-- 🧩 Menschen, die modulare Systeme lieben
-
----
-
-## ⚠️ Status
-
-🚧 Work in Progress  
-Dieses Projekt befindet sich aktiv im Aufbau.
-
----
-
-## 🤝 Mitmachen
-
-Contributions sind willkommen – besonders in:
-
-- Kernel-Tuning
-- Modul-System
-- Installer
-- Hardware Detection
-
----
-
-## 📜 Lizenz
-
-BSD-inspirierter Ansatz – offen, flexibel, frei.
-
----
-
-## 💡 Vision
-
-> Ein Linux-System, das nicht alles kann –  
-> sondern genau das, was du brauchst.  
-
+Example:
