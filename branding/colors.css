@@ -1,0 +1,79 @@
+/* Vyrnix Linux Branding Colors
+
+* File: branding/colors.css
+* Purpose: Central color definitions for website, Git page styling,
+* docs, and future UI work.
+  */
+
+:root {
+/* Primary brand color */
+--vyrnix-primary: #AB2B28;
+
+/* Backgrounds */
+--vyrnix-bg: #0F1115;
+--vyrnix-bg-secondary: #161A22;
+--vyrnix-surface: #1C212B;
+--vyrnix-surface-alt: #242A36;
+
+/* Text */
+--vyrnix-text: #E8EDF2;
+--vyrnix-text-secondary: #AAB4C0;
+--vyrnix-text-muted: #7D8794;
+
+/* Accent / status */
+--vyrnix-info: #5AA9E6;
+--vyrnix-success: #4FA36C;
+--vyrnix-warning: #D9A441;
+--vyrnix-error: #C94F4F;
+
+/* Borders */
+--vyrnix-border: #2B3240;
+--vyrnix-border-strong: #3A4454;
+
+/* Interactive */
+--vyrnix-link: var(--vyrnix-info);
+--vyrnix-link-hover: #7BBCEE;
+--vyrnix-primary-hover: #C23531;
+--vyrnix-primary-active: #922320;
+
+/* Focus */
+--vyrnix-focus-ring: rgba(171, 43, 40, 0.35);
+
+/* Selection */
+--vyrnix-selection-bg: rgba(171, 43, 40, 0.28);
+--vyrnix-selection-text: #F8FBFF;
+
+/* Code */
+--vyrnix-code-bg: #12161D;
+--vyrnix-code-border: #2A313D;
+
+/* Shadows */
+--vyrnix-shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.22);
+--vyrnix-shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+/* Optional utility mapping for generic usage */
+:root {
+--color-primary: var(--vyrnix-primary);
+
+--color-bg: var(--vyrnix-bg);
+--color-bg-secondary: var(--vyrnix-bg-secondary);
+--color-surface: var(--vyrnix-surface);
+--color-surface-alt: var(--vnix-surface-alt);
+
+--color-text: var(--vyrnix-text);
+--color-text-secondary: var(--vyrnix-text-secondary);
+--color-text-muted: var(--vyrnix-text-muted);
+
+--color-info: var(--vyrnix-info);
+--color-success: var(--vyrnix-success);
+--color-warning: var(--vyrnix-warning);
+--color-error: var(--vyrnix-error);
+
+--color-border: var(--vyrnix-border);
+--color-border-strong: var(--vyrnix-border-strong);
+
+--color-link: var(--vyrnix-link);
+--color-link-hover: var(--vyrnix-link-hover);
+--color-focus-ring: var(--vyrnix-focus-ring);
+}
